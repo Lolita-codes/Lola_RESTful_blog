@@ -1,3 +1,4 @@
+import datetime
 from flask import Flask, render_template, redirect, url_for
 from flask_bootstrap import Bootstrap
 from flask_sqlalchemy import SQLAlchemy
@@ -40,6 +41,7 @@ class CreatePostForm(FlaskForm):
     submit = SubmitField("Submit Post")
 
 
+# Gets Blog posts items
 @app.route('/')
 def get_all_posts():
     posts = BlogPost.query.all()
@@ -60,6 +62,27 @@ def about():
 @app.route("/contact")
 def contact():
     return render_template("contact.html")
+
+
+# Post a new blog post
+@app.route('/new-post', methods=['GET', 'POST'])
+def create_post():
+    form = CreatePostForm()
+    if form.validate_on_submit():
+        new_post = BlogPost(
+            title=form.title.data,
+            subtitle=form.subtitle.data,
+            date=datetime.date.today().strftime('%B %d, %Y'),
+            body=form.body.data,
+            author=form.author.data,
+            img_url=form.img_url.data,
+        )
+        db.session.add(new_post)
+        db.session.commit()
+        return redirect(url_for('get_all_posts'))
+    return render_template('make-post.html', form=form)
+
+
 
 
 if __name__ == "__main__":
