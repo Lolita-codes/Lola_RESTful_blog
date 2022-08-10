@@ -19,6 +19,7 @@ Bootstrap(app)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///posts.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
+current_year = datetime.datetime.now().year
 
 ##CONFIGURE TABLE
 class BlogPost(db.Model):
@@ -45,23 +46,23 @@ class CreatePostForm(FlaskForm):
 @app.route('/')
 def get_all_posts():
     posts = BlogPost.query.all()
-    return render_template("index.html", all_posts=posts)
+    return render_template("index.html", all_posts=posts, year=current_year)
 
 
 @app.route("/post/<int:index>")
 def show_post(index):
     requested_post = BlogPost.query.get(index)
-    return render_template("post.html", post=requested_post)
+    return render_template("post.html", post=requested_post, year=current_year)
 
 
 @app.route("/about")
 def about():
-    return render_template("about.html")
+    return render_template("about.html", year=current_year)
 
 
 @app.route("/contact")
 def contact():
-    return render_template("contact.html")
+    return render_template("contact.html", year=current_year)
 
 
 # Post a new blog post
@@ -80,7 +81,7 @@ def create_post():
         db.session.add(new_post)
         db.session.commit()
         return redirect(url_for('get_all_posts'))
-    return render_template('make-post.html', form=form)
+    return render_template('make-post.html', form=form, year=current_year)
 
 
 # Edits existing blog posts
@@ -102,8 +103,15 @@ def edit_post(post_id):
         post_to_update.body = edit_form.body.data
         db.session.commit()
         return redirect(url_for("show_post", index=post_to_update.id))
-    return render_template('make-post.html', form=edit_form, to_edit=True)
+    return render_template('make-post.html', form=edit_form, to_edit=True, year=current_year)
 
+
+@app.route('/delete/<post_id>')
+def delete_post(post_id):
+    post_to_delete = BlogPost.query.get(post_id)
+    db.session.delete(post_to_delete)
+    db.session.commit()
+    return redirect(url_for('get_all_posts'))
 
 
 if __name__ == "__main__":

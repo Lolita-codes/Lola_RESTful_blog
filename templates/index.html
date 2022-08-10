@@ -7,8 +7,8 @@
       <div class="row">
         <div class="col-lg-8 col-md-10 mx-auto">
           <div class="site-heading">
-            <h1>Angela's Blog</h1>
-            <span class="subheading">A collection of Angela's random musings.</span>
+            <h1>Lola's Blog</h1>
+            <span class="subheading">A collection of Lola's random musings.</span>
           </div>
         </div>
       </div>
@@ -31,7 +31,9 @@
           </a>
           <p class="post-meta">Posted by
             <a href="#">{{post.author}}</a>
-            on {{post.date}}</p>
+            on {{post.date}}
+            <a class='btn' href="{{ url_for('delete_post', post_id=post.id) }}">Delete post</a>
+          </p>
         </div>
         <hr>
         {% endfor %}
