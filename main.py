@@ -83,6 +83,27 @@ def create_post():
     return render_template('make-post.html', form=form)
 
 
+# Edits existing blog posts
+@app.route('/edit-post/<post_id>', methods=['GET', 'POST'])
+def edit_post(post_id):
+    post_to_update = BlogPost.query.get(post_id)
+    edit_form = CreatePostForm(
+        title=post_to_update.title,
+        subtitle=post_to_update.subtitle,
+        img_url=post_to_update.img_url,
+        author=post_to_update.author,
+        body=post_to_update.body
+    )
+    if edit_form.validate_on_submit():
+        post_to_update.title = edit_form.title.data
+        post_to_update.subtitle = edit_form.subtitle.data
+        post_to_update.img_url = edit_form.img_url.data
+        post_to_update.author = edit_form.author.data
+        post_to_update.body = edit_form.body.data
+        db.session.commit()
+        return redirect(url_for("show_post", index=post_to_update.id))
+    return render_template('make-post.html', form=edit_form, to_edit=True)
+
 
 
 if __name__ == "__main__":
