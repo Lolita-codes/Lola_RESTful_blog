@@ -29,24 +29,32 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 
 
-# CONFIGURE TABLE
-class BlogPost(UserMixin, db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(250), unique=True, nullable=False)
-    subtitle = db.Column(db.String(250), nullable=False)
-    date = db.Column(db.String(250), nullable=False)
-    body = db.Column(db.Text, nullable=False)
-    author = db.Column(db.String(250), nullable=False)
-    img_url = db.Column(db.String(250), nullable=False)
-# db.create_all()
-
-
 class User(UserMixin, db.Model):
+    __tablename__ = "user"
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(100), unique=True)
     password = db.Column(db.String(100))
     name = db.Column(db.String(100))
-#db.create_all()
+    # This will act like a List of BlogPost objects attached to each User.
+    # The "author" refers to the author property in the BlogPost class.
+    posts = relationship("BlogPost", back_populates="author")
+db.create_all()
+
+
+# CONFIGURE TABLE
+class BlogPost(UserMixin, db.Model):
+    __tablename__ = "blog_post"
+    id = db.Column(db.Integer, primary_key=True)
+    # Creates Foreign Key
+    author_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+    # References the User object and posts in the User class.
+    author = relationship("User", back_populates="posts")
+    title = db.Column(db.String(250), unique=True, nullable=False)
+    subtitle = db.Column(db.String(250), nullable=False)
+    date = db.Column(db.String(250), nullable=False)
+    body = db.Column(db.Text, nullable=False)
+    img_url = db.Column(db.String(250), nullable=False)
+db.create_all()
 
 
 @login_manager.user_loader
@@ -63,6 +71,7 @@ def admin_only(f):
             return abort(403)
         return f(*args, **kwargs)
     return decorated_function
+
 
 # Gets Blog posts items
 @app.route('/')
@@ -98,13 +107,13 @@ def create_post():
             subtitle=form.subtitle.data,
             date=datetime.date.today().strftime('%B %d, %Y'),
             body=form.body.data,
-            author=form.author.data,
+            author=current_user,
             img_url=form.img_url.data,
         )
         db.session.add(new_post)
         db.session.commit()
         return redirect(url_for('get_all_posts'))
-    return render_template('make-post.html', form=form, year=current_year)
+    return render_template('make-post.html', form=form, year=current_year, current_user=current_user)
 
 
 # Edits existing blog posts
