@@ -1,3 +1,7 @@
+{% extends 'bootstrap/base.html' %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block content %}
 {% include "header.html" %}
 
 <!-- Page Header -->
@@ -33,18 +37,25 @@
           <a class="btn btn-primary float-right" href="{{url_for('edit_post', post_id=post.id)}}">Edit Post</a>
            </div>
             {% endif %}
+
             <!--           Comments Area -->
+            {{ ckeditor.load() }}
+            {{ ckeditor.config(name='comment') }}
+            {{ wtf.quick_form(form, novalidate=True, button_map={"submit": "primary"}) }}
+
           <div class="col-lg-8 col-md-10 mx-auto comment">
               <ul class="commentList">
+                {% for comment in comments: %}
                 <li>
                     <div class="commenterImage">
                       <img src="https://pbs.twimg.com/profile_images/744849215675838464/IH0FNIXk.jpg"/>
                     </div>
                     <div class="commentText">
-                      <p>Some comment</p>
-                      <span class="date sub-text">comment author name</span>
+                      <p>{{ comment.text|safe }}</p>
+                      <span class="date sub-text">{{ comment.comment_author.name}}</span>
                     </div>
                 </li>
+               {% endfor %}
               </ul>
             </div>
 
@@ -56,3 +67,4 @@
 
   <hr>
 {% include "footer.html" %}
+{% endblock %}

@@ -7,7 +7,7 @@ from sqlalchemy.orm import relationship
 from flask_ckeditor import CKEditor
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin, login_user, LoginManager, login_required, current_user, logout_user
-from forms import CreatePostForm, RegisterForm, LoginForm
+from forms import CreatePostForm, RegisterForm, LoginForm, CommentForm
 from flask_gravatar import Gravatar
 import os
 from dotenv import load_dotenv
@@ -38,7 +38,8 @@ class User(UserMixin, db.Model):
     # This will act like a List of BlogPost objects attached to each User.
     # The "author" refers to the author property in the BlogPost class.
     posts = relationship("BlogPost", back_populates="author")
-db.create_all()
+    comments = relationship('Comment', back_populates='comment_author')
+# db.create_all()
 
 
 # CONFIGURE TABLE
@@ -54,7 +55,19 @@ class BlogPost(UserMixin, db.Model):
     date = db.Column(db.String(250), nullable=False)
     body = db.Column(db.Text, nullable=False)
     img_url = db.Column(db.String(250), nullable=False)
-db.create_all()
+    comments = relationship('Comment', back_populates='parent_post')
+# db.create_all()
+
+
+class Comment(db.Model):
+    __tablename__ = 'comments'
+    id = db.Column(db.Integer, primary_key=True)
+    author_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+    comment_author = relationship("User", back_populates="comments")
+    text = db.Column(db.Text, nullable=False)
+    post_id = db.Column(db.Integer, db.ForeignKey("blog_post.id"))
+    parent_post = relationship("BlogPost", back_populates="comments")
+# db.create_all()
 
 
 @login_manager.user_loader
@@ -77,13 +90,27 @@ def admin_only(f):
 @app.route('/')
 def get_all_posts():
     posts = BlogPost.query.all()
-    return render_template("index.html", all_posts=posts, year=current_year)
+    return render_template("index.html", all_posts=posts, year=current_year, logged_in=current_user.is_authenticated)
 
 
-@app.route("/post/<int:index>")
+@app.route("/post/<int:index>", methods=["GET", "POST"])
 def show_post(index):
+    all_comments = Comment.query.filter_by(post_id=index).all()
+    form = CommentForm()
     requested_post = BlogPost.query.get(index)
-    return render_template("post.html", post=requested_post, year=current_year)
+    if form.validate_on_submit():
+        if not current_user.is_authenticated:
+            flash("You need to login or register to comment.")
+            return redirect(url_for("login"))
+        new_comment = Comment(
+            text=form.comment.data,
+            comment_author=current_user,
+            parent_post=requested_post
+        )
+        db.session.add(new_comment)
+        db.session.commit()
+    return render_template("post.html", post=requested_post, year=current_year, form=form, comments=all_comments,
+                           current_user=current_user, logged_in=current_user.is_authenticated)
 
 
 @app.route("/about")
@@ -132,11 +159,11 @@ def edit_post(post_id):
         post_to_update.title = edit_form.title.data
         post_to_update.subtitle = edit_form.subtitle.data
         post_to_update.img_url = edit_form.img_url.data
-        post_to_update.author = edit_form.author.data
+        post_to_update.author = current_user
         post_to_update.body = edit_form.body.data
         db.session.commit()
         return redirect(url_for("show_post", index=post_to_update.id))
-    return render_template('make-post.html', form=edit_form, to_edit=True, year=current_year)
+    return render_template('make-post.html', form=edit_form, to_edit=True, year=current_year, logged_in=current_user.is_authenticated)
 
 
 @app.route('/delete/<post_id>')
