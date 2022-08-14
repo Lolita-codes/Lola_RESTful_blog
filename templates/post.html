@@ -44,19 +44,21 @@
             {{ wtf.quick_form(form, novalidate=True, button_map={"submit": "primary"}) }}
 
           <div class="col-lg-8 col-md-10 mx-auto comment">
+              {% for comment in comments: %}
               <ul class="commentList">
-                {% for comment in comments: %}
                 <li>
-                    <div class="commenterImage">
-                      <img src="https://pbs.twimg.com/profile_images/744849215675838464/IH0FNIXk.jpg"/>
+                    <div class="commenterImage" style="margin-top:20px;">
+                      <img style="border-radius: 50%; float: left; margin-right: 5px;" src="{{ comment.comment_author.email | gravatar }}"/>
                     </div>
                     <div class="commentText">
-                      <p>{{ comment.text|safe }}</p>
-                      <span class="date sub-text">{{ comment.comment_author.name}}</span>
+                        <div class="comment">
+                        {{comment.text|safe}}
+                        </div>
+                        <span class="date sub-text" style="margin: 8px 0 0 40px;"><small style="font-size: 70%;">{{comment.comment_author.name}}</small></span>
                     </div>
                 </li>
-               {% endfor %}
               </ul>
+              {% endfor %}
             </div>
 
 

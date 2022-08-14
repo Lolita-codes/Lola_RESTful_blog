@@ -1,6 +1,6 @@
 import datetime
 from functools import wraps
-from flask import Flask, render_template, redirect, url_for, flash, abort
+from flask import Flask, render_template, redirect, url_for, flash, abort, request
 from flask_bootstrap import Bootstrap
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import relationship
@@ -27,6 +27,16 @@ current_year = datetime.datetime.now().year
 
 login_manager = LoginManager()
 login_manager.init_app(app)
+
+
+gravatar = Gravatar(app,
+                    size=30,
+                    rating='g',
+                    default='retro',
+                    force_default=False,
+                    force_lower=False,
+                    use_ssl=False,
+                    base_url=None)
 
 
 class User(UserMixin, db.Model):
