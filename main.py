@@ -1,4 +1,6 @@
 import datetime
+import smtplib
+import ssl
 from functools import wraps
 from flask import Flask, render_template, redirect, url_for, flash, abort, request
 from flask_bootstrap import Bootstrap
@@ -128,8 +130,23 @@ def about():
     return render_template("about.html", year=current_year)
 
 
-@app.route("/contact")
+@app.route("/contact", methods=["GET", "POST"])
 def contact():
+    if request.method == 'POST':
+        name = request.form.get('name')
+        email = request.form.get('email')
+        phone_number = request.form.get('phone_number')
+        message = request.form.get('message')
+        context = ssl.create_default_context()
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465, context=context) as connection:
+            connection.login(user=os.environ['EMAIL'], password=os.environ['PASSWORD'])
+            connection.sendmail(
+                from_addr=os.environ['EMAIL'],
+                to_addrs=os.environ['TO_EMAIL'],
+                msg=f"Subject: New Message\n\nName: {name}\nEmail address: {email}\nPhone Number: {phone_number}\nMessage: {message}"
+            )
+        flash('Thank you. I will reply as soon as possible')
+        return redirect(url_for('contact'))
     return render_template("contact.html", year=current_year)
 
 
